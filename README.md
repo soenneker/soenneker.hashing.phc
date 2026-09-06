@@ -22,6 +22,7 @@ PhcString value = PhcFormatter.Parse(
 
 value.TryGetParameter("m", out string? memoryCost);
 string encoded = value.ToString();
+bool valid = PhcFormatter.IsValid(encoded);
 ```
 
 Build a PHC string while preserving explicit parameter order:

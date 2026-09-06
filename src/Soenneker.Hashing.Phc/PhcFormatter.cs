@@ -11,6 +11,13 @@ namespace Soenneker.Hashing.Phc;
 public static class PhcFormatter
 {
     /// <summary>
+    /// Determines whether a value is a valid Password Hashing Competition (PHC) string.
+    /// </summary>
+    /// <param name="value">The value to validate.</param>
+    /// <returns><see langword="true"/> when the value is a valid PHC string; otherwise, <see langword="false"/>.</returns>
+    public static bool IsValid(string? value) => TryParse(value, out _);
+
+    /// <summary>
     /// Parses a PHC string.
     /// </summary>
     /// <param name="value">The PHC string to parse.</param>

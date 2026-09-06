@@ -10,6 +10,14 @@ namespace Soenneker.Hashing.Phc.Tests;
 public sealed class PhcFormatterTests
 {
     [Test]
+    public async Task IsValid_identifies_valid_and_invalid_values()
+    {
+        await Assert.That(PhcFormatter.IsValid("$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$YW5kYWZha2VoYXNo")).IsTrue();
+        await Assert.That(PhcFormatter.IsValid("argon2id$v=19")).IsFalse();
+        await Assert.That(PhcFormatter.IsValid(null)).IsFalse();
+    }
+
+    [Test]
     public async Task Parse_and_format_round_trip_argon2id()
     {
         const string encoded = "$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$YW5kYWZha2VoYXNo";

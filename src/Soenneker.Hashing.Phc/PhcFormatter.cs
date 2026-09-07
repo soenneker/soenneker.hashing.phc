@@ -46,61 +46,59 @@ public static class PhcFormatter
         if (string.IsNullOrEmpty(value) || value[0] != '$')
             return false;
 
-        string[] fields = value.Split('$');
-        if (fields.Length is < 2 or > 6 || fields[0].Length != 0 || !IsName(fields[1]))
+        ReadOnlySpan<char> text = value;
+        Span<Range> fields = stackalloc Range[7];
+        int fieldCount = text.Split(fields, '$');
+        if (fieldCount is < 2 or > 6 || !IsName(text[fields[1]]))
             return false;
 
         var index = 2;
         int? version = null;
-        var parameters = new List<PhcParameter>();
+        List<PhcParameter>? parameters = null;
 
-        if (index < fields.Length && fields[index].StartsWith("v=", StringComparison.Ordinal))
+        if (index < fieldCount && text[fields[index]].StartsWith("v=", StringComparison.Ordinal))
         {
-            ReadOnlySpan<char> versionText = fields[index].AsSpan(2);
+            ReadOnlySpan<char> versionText = text[fields[index]][2..];
             if (versionText.IsEmpty || !int.TryParse(versionText, NumberStyles.None, CultureInfo.InvariantCulture, out int parsedVersion))
                 return false;
-
             version = parsedVersion;
             index++;
         }
 
-        if (index < fields.Length && fields[index].Contains('=', StringComparison.Ordinal))
+        if (index < fieldCount && text[fields[index]].Contains('='))
         {
-            string[] pairs = fields[index].Split(',');
+            ReadOnlySpan<char> parameterText = text[fields[index]];
             var names = new HashSet<string>(StringComparer.Ordinal);
-
-            foreach (string pair in pairs)
+            parameters = new List<PhcParameter>();
+            foreach (Range range in parameterText.Split(','))
             {
+                ReadOnlySpan<char> pair = parameterText[range];
                 int separator = pair.IndexOf('=');
                 if (separator <= 0 || separator == pair.Length - 1)
                     return false;
 
-                string name = pair[..separator];
-                string parameterValue = pair[(separator + 1)..];
-                if (!IsName(name) || !IsValue(parameterValue) || !names.Add(name))
+                ReadOnlySpan<char> name = pair[..separator];
+                ReadOnlySpan<char> parameterValue = pair[(separator + 1)..];
+                if (!IsName(name) || !IsValue(parameterValue))
                     return false;
 
-                parameters.Add(new PhcParameter(name, parameterValue));
+                string nameString = name.ToString();
+                if (!names.Add(nameString))
+                    return false;
+                parameters.Add(new PhcParameter(nameString, parameterValue.ToString()));
             }
-
             index++;
         }
 
-        string? salt = index < fields.Length ? fields[index++] : null;
-        string? hash = index < fields.Length ? fields[index++] : null;
-
-        if (index != fields.Length || (salt is not null && !IsValue(salt)) || (hash is not null && !IsValue(hash)))
+        string? salt = index < fieldCount ? text[fields[index++]].ToString() : null;
+        string? hash = index < fieldCount ? text[fields[index++]].ToString() : null;
+        if (index != fieldCount || (salt is not null && !IsValue(salt)) || (hash is not null && !IsValue(hash)))
             return false;
 
-        result = new PhcString(fields[1], version, parameters, salt, hash);
+        result = new PhcString(text[fields[1]].ToString(), version, parameters, salt, hash);
         return true;
     }
 
-    /// <summary>
-    /// Formats a structured PHC value.
-    /// </summary>
-    /// <param name="value">The value to format.</param>
-    /// <returns>The PHC string.</returns>
     public static string Format(PhcString value)
     {
         ArgumentNullException.ThrowIfNull(value);

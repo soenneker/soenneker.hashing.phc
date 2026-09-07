@@ -61,13 +61,13 @@ public sealed class PhcString
             throw new ArgumentException("A PHC hash cannot be specified without a salt.", nameof(hash));
 
         _parameters = parameters is null ? [] : [.. parameters];
-        var names = new HashSet<string>(StringComparer.Ordinal);
+        HashSet<string>? names = _parameters.Length > 1 ? new HashSet<string>(_parameters.Length, StringComparer.Ordinal) : null;
 
         for (var i = 0; i < _parameters.Length; i++)
         {
             PhcFormatter.ValidateParameter(_parameters[i], nameof(parameters));
 
-            if (!names.Add(_parameters[i].Name))
+            if (names is not null && !names.Add(_parameters[i].Name))
                 throw new ArgumentException($"The PHC parameter '{_parameters[i].Name}' is duplicated.", nameof(parameters));
         }
     }

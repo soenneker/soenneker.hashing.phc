@@ -4,13 +4,14 @@ using System.Threading.Tasks;
 using TUnit.Assertions;
 using TUnit.Assertions.Extensions;
 using TUnit.Core;
+using System.Threading;
 
 namespace Soenneker.Hashing.Phc.Tests;
 
 public sealed class PhcFormatterTests
 {
     [Test]
-    public async ValueTask IsValid_identifies_valid_and_invalid_values()
+    public async ValueTask IsValid_identifies_valid_and_invalid_values(CancellationToken cancellationToken)
     {
         await Assert.That(PhcFormatter.IsValid("$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$YW5kYWZha2VoYXNo")).IsTrue();
         await Assert.That(PhcFormatter.IsValid("argon2id$v=19")).IsFalse();
@@ -18,7 +19,7 @@ public sealed class PhcFormatterTests
     }
 
     [Test]
-    public async ValueTask Parse_and_format_round_trip_argon2id()
+    public async ValueTask Parse_and_format_round_trip_argon2id(CancellationToken cancellationToken)
     {
         const string encoded = "$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$YW5kYWZha2VoYXNo";
 
@@ -33,7 +34,7 @@ public sealed class PhcFormatterTests
     }
 
     [Test]
-    public async ValueTask Format_supports_records_without_version_or_parameters()
+    public async ValueTask Format_supports_records_without_version_or_parameters(CancellationToken cancellationToken)
     {
         var value = new PhcString("example", salt: "c2FsdA", hash: "aGFzaA");
 
@@ -46,13 +47,13 @@ public sealed class PhcFormatterTests
     [Arguments("$argon2id$v=x$m=1$salt$hash")]
     [Arguments("$argon2id$m=1,m=2$salt$hash")]
     [Arguments("$argon2id$m=1$salt$hash$extra")]
-    public async ValueTask TryParse_rejects_invalid_values(string encoded)
+    public async ValueTask TryParse_rejects_invalid_values(string encoded, CancellationToken cancellationToken)
     {
         await Assert.That(PhcFormatter.TryParse(encoded, out _)).IsFalse();
     }
 
     [Test]
-    public async ValueTask TryFormat_reports_a_small_destination()
+    public async ValueTask TryFormat_reports_a_small_destination(CancellationToken cancellationToken)
     {
         var value = new PhcString("example");
         var destination = new char[2];
